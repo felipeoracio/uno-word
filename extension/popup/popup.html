@@ -110,6 +110,7 @@
 
         <button class="wc__btn wc__btn--primary" id="primary-btn" data-testid="primary-btn">Start Session</button>
         <p class="wc__helper wc__helper--center" id="helper-text" data-testid="helper-text"></p>
+        <button class="wc__progress-link" id="open-progress" data-testid="open-progress" data-i18n="progress.link">Progress →</button>
       </section>
 
       <!-- ================= UPGRADE CTA (free-only, appended after session) ================= -->
@@ -208,6 +209,55 @@
         </div>
 
         <button class="wc__btn wc__btn--primary" id="pro-onboard-next" data-testid="pro-onboard-next" data-i18n="onboard.continue">Continue</button>
+      </section>
+
+      <!-- ================= PROGRESS (in-popup) ================= -->
+      <section class="wc__panel wc__progress" id="progress-panel" data-testid="progress-panel" hidden>
+        <button class="wc__back" id="progress-back" data-testid="progress-back" data-i18n-aria="nav.back" aria-label="Back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <span data-i18n="nav.back">Back</span>
+        </button>
+        <h2 class="wc__eyebrow" data-i18n="progress.title">Your writing progress</h2>
+
+        <div class="wc__streak" id="progress-streak" data-testid="progress-streak" hidden>
+          <svg class="wc__streak-flame" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3-1 5-2 6-1.5 1.5-3 3-3 6a5 5 0 0 0 10 0c0-2-1-3-1-4 2 1 3 3 3 5a7 7 0 1 1-14 0c0-4 3-6 4-8 1-1.5 2-3 3-5z"/></svg>
+          <span id="progress-streak-text" data-testid="progress-streak-text"></span>
+        </div>
+
+        <nav class="wc__range-tabs" id="progress-tabs" data-testid="progress-tabs" role="tablist">
+          <button class="wc__range-tab" data-range="today" data-testid="prog-tab-today" data-i18n="dash.tabs.today">Today</button>
+          <button class="wc__range-tab" data-range="week"  data-testid="prog-tab-week"  data-i18n="dash.tabs.week">This week</button>
+          <button class="wc__range-tab" data-range="month" data-testid="prog-tab-month" data-i18n="dash.tabs.month">This month</button>
+          <button class="wc__range-tab" data-range="year"  data-testid="prog-tab-year"  data-i18n="dash.tabs.year">This year</button>
+          <button class="wc__range-tab" data-range="all"   data-testid="prog-tab-all"   data-i18n="dash.tabs.all">All time</button>
+        </nav>
+
+        <div class="wc__prog-cards">
+          <div class="wc__prog-card">
+            <p class="wc__prog-card-label" id="prog-primary-sub" data-testid="prog-primary-sub"></p>
+            <p class="wc__prog-card-value" id="prog-primary" data-testid="prog-primary">0</p>
+            <p class="wc__prog-card-unit" data-i18n="session.words">words</p>
+          </div>
+          <div class="wc__prog-card">
+            <p class="wc__prog-card-label" data-i18n="progress.sessions">Sessions</p>
+            <p class="wc__prog-card-value" id="prog-sessions" data-testid="prog-sessions">0</p>
+            <p class="wc__prog-card-unit" id="prog-progress" data-testid="prog-progress"></p>
+          </div>
+        </div>
+
+        <div class="wc__prog-chart-card" id="prog-chart-card" data-testid="prog-chart-card">
+          <p class="wc__prog-chart-title" data-i18n="progress.activity">Writing activity</p>
+          <div class="wc__prog-chart" id="prog-chart" data-testid="prog-chart"></div>
+          <p class="wc__prog-chart-empty" id="prog-chart-empty" data-i18n="dash.noData" hidden>No writing recorded yet in this range.</p>
+        </div>
+
+        <div class="wc__prog-paywall" id="prog-paywall" data-testid="prog-paywall" hidden>
+          <p class="wc__setting-label" data-i18n="dash.free.banner">Unlock this dashboard with Pro</p>
+          <p class="wc__helper" data-i18n="dash.free.bannerSub">Daily prompts, writing goals, and history at a glance.</p>
+          <button class="wc__btn wc__btn--outline wc__btn--sm" id="prog-upgrade" data-testid="prog-upgrade" data-i18n="upgrade.cta.btn">Upgrade</button>
+        </div>
+
+        <button class="wc__btn wc__btn--outline" id="prog-history" data-testid="prog-history" data-i18n="progress.history">History</button>
       </section>
 
       <!-- ================= HISTORY ================= -->

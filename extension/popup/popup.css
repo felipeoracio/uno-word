@@ -465,3 +465,68 @@ html, body {
 .wc__btn--danger { background: var(--danger); color: #fff; }
 .wc__btn--danger:hover { background: var(--danger-hover); }
 .wc__pro-badge--sm[hidden] { display: none !important; }
+
+/* ================= PROGRESS VIEW (in-popup) ================= */
+
+/* Widen the popup only while Progress is open */
+html:has(body.wc--wide), body.wc--wide { width: 720px; }
+
+.wc__progress-link {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  margin: 10px auto 0; display: block;
+  color: var(--primary); font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 10px; border-radius: 8px;
+  transition: background-color 140ms ease;
+}
+.wc__progress-link:hover { background: var(--primary-soft); }
+
+.wc__progress .wc__streak { margin: 4px auto 14px; }
+
+.wc__range-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 16px; }
+.wc__range-tab {
+  appearance: none; cursor: pointer; flex: 1 1 auto;
+  padding: 6px 8px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+.wc__range-tab:hover { border-color: var(--primary); }
+.wc__range-tab[aria-selected="true"] {
+  border-color: var(--primary); color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.wc__prog-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.wc__prog-card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.wc__prog-card-label { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-subtle); font-weight: 600; }
+.wc__prog-card-value { margin: 6px 0 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+.wc__prog-card-unit { margin: 2px 0 0; font-size: 12px; color: var(--text-muted); }
+
+.wc__prog-chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+}
+.wc__prog-chart-title { margin: 0 0 12px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.wc__prog-chart {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  align-items: end; gap: 6px; height: 140px;
+}
+.wc__prog-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+.wc__prog-bar-fill {
+  width: 70%; max-width: 26px; border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(180deg, var(--primary), color-mix(in srgb, var(--primary) 72%, #000));
+  transition: height 220ms ease;
+}
+.wc__prog-bar-label { margin-top: 6px; font-size: 10px; color: var(--text-subtle); white-space: nowrap; }
+.wc__prog-chart-empty { text-align: center; color: var(--text-subtle); font-size: 13px; margin: 8px 0 0; }
+
+.wc__prog-paywall {
+  border: 1px dashed var(--border-strong); border-radius: var(--radius);
+  background: var(--surface-2); padding: 14px; margin-bottom: 14px;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+}
+.wc__prog-paywall .wc__btn { align-self: stretch; }

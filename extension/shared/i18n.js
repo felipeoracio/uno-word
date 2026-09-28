@@ -143,6 +143,11 @@
       // streak
       'streak.day': '{n} day streak',
       'streak.days': '{n} day streak',
+      'progress.link': 'Progress →',
+      'progress.title': 'Your writing progress',
+      'progress.activity': 'Writing activity',
+      'progress.history': 'History',
+      'progress.sessions': 'Sessions',
 
       // first-launch language
       'first.eyebrow': 'Welcome',
@@ -381,6 +386,11 @@
       // streak
       'streak.day': '{n} día de racha',
       'streak.days': '{n} días de racha',
+      'progress.link': 'Progreso →',
+      'progress.title': 'Tu progreso de escritura',
+      'progress.activity': 'Actividad de escritura',
+      'progress.history': 'Historial',
+      'progress.sessions': 'Sesiones',
 
       // first-launch language
       'first.eyebrow': 'Bienvenido',

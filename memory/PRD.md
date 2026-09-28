@@ -187,3 +187,21 @@ Extended the shipped extension (no rebuild). All logic client-side; feedback via
 - Tests: `engine.test.js` 50 + `history.test.js` 18 = **68 passing**. Browser-
   verified content script on textarea + contenteditable (cut/undo/paste), popup +
   settings render checks.
+
+---
+
+## Phase 3 — Progress moved inside the popup (2026-06)
+
+- `Progress` now opens as an in-popup view (`#progress-panel`) instead of a new
+  dashboard tab. The header chart icon + a new "Progress →" link in the session
+  view both call `openProgress()`; `OPEN_DASHBOARD` / `chrome.tabs.create` is no
+  longer used from the popup (no external navigation).
+- Popup widens to 720px only while Progress is open (`body.wc--wide`), then
+  returns to 360px on Back. No horizontal scrolling.
+- Reuses existing `GET_STATS` / `GET_STREAK`; chart logic ported compactly into
+  `popup.js` (`renderProgChart`) mirroring the dashboard — no new dependency, no
+  duplicate calculations. Range tabs Today/Week/Month/Year/All, two summary cards,
+  streak, and a History button (opens the existing in-popup history).
+- Free users see the Today card + streak + a tasteful Upgrade card (tabs/chart
+  hidden); Pro sees the full view. Session state + floating counter untouched
+  (Progress only reads state). EN/ES strings added (`progress.*`).

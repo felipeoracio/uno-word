@@ -22,6 +22,7 @@ const els = {
   firstlaunch:   $('firstlaunch-panel'),
   promptPanel:   $('prompt-panel'),
   session:       $('session-panel'),
+  progress:      $('progress-panel'),
   upgradeCta:    $('upgrade-cta'),
   upgrade:       $('upgrade-panel'),
   proOnboard:    $('pro-onboarding'),
@@ -43,6 +44,21 @@ const els = {
   helperText:   $('helper-text'),
   streakChip:   $('streak-chip'),
   streakText:   $('streak-text'),
+  openProgress: $('open-progress'),
+  progressBack: $('progress-back'),
+  progStreak:   $('progress-streak'),
+  progStreakText: $('progress-streak-text'),
+  progTabs:     $('progress-tabs'),
+  progPrimary:  $('prog-primary'),
+  progPrimarySub:$('prog-primary-sub'),
+  progSessions: $('prog-sessions'),
+  progProgress: $('prog-progress'),
+  progChartCard:$('prog-chart-card'),
+  progChart:    $('prog-chart'),
+  progChartEmpty:$('prog-chart-empty'),
+  progPaywall:  $('prog-paywall'),
+  progUpgrade:  $('prog-upgrade'),
+  progHistory:  $('prog-history'),
 
   // prompt
   promptText:   $('prompt-text'),
@@ -159,12 +175,15 @@ function showPanel(name) {
   els.firstlaunch.hidden = name !== 'firstlaunch';
   els.promptPanel.hidden = !(name === 'session' && isPro() && !state?.active);
   els.session.hidden    = name !== 'session';
+  els.progress.hidden   = name !== 'progress';
   els.upgradeCta.hidden = !(name === 'session' && !isPro());
   els.upgrade.hidden    = name !== 'upgrade';
   els.proOnboard.hidden = name !== 'proOnboard';
   els.history.hidden    = name !== 'history';
   els.settings.hidden   = name !== 'settings';
   els.feedback.hidden   = name !== 'feedback';
+  // The Progress view needs more room — widen the popup only for it.
+  document.body.classList.toggle('wc--wide', name === 'progress');
 }
 
 function isPro() { return (settings?.plan || 'free') === 'pro'; }
@@ -239,6 +258,78 @@ async function refreshStreak() {
   const r = await sendMessage({ type: 'GET_STREAK' });
   streakValue = r.ok ? (r.streak || 0) : 0;
   renderStreak();
+}
+
+// ---------- progress (in-popup) ----------
+
+const PROG_DOW = ['day.mon','day.tue','day.wed','day.thu','day.fri','day.sat','day.sun'];
+const PROG_MON = ['month.jan','month.feb','month.mar','month.apr','month.may','month.jun','month.jul','month.aug','month.sep','month.oct','month.nov','month.dec'];
+let progRange = 'today';
+
+function markProgTab() {
+  els.progTabs.querySelectorAll('.wc__range-tab').forEach((b) =>
+    b.setAttribute('aria-selected', b.dataset.range === progRange ? 'true' : 'false'));
+}
+
+function renderProgChart(buckets, range) {
+  els.progChart.innerHTML = '';
+  const hasAny = buckets.some((b) => b.words > 0);
+  els.progChartEmpty.hidden = hasAny || range === 'today';
+  els.progChart.setAttribute('data-cols', range === 'week' ? '7' : range === 'year' ? '12' : range === 'today' ? '1' : String(buckets.length));
+  const max = Math.max(1, ...buckets.map((b) => b.words));
+  buckets.forEach((b) => {
+    const wrap = document.createElement('div'); wrap.className = 'wc__prog-bar';
+    const bar = document.createElement('div'); bar.className = 'wc__prog-bar-fill';
+    const pct = Math.max(0, Math.min(100, (b.words / max) * 100));
+    bar.style.height = b.words === 0 ? '3px' : `${Math.max(6, pct)}%`;
+    bar.setAttribute('title', `${fmtNumber(b.words)} — ${b.label}`);
+    wrap.appendChild(bar);
+    const label = document.createElement('span'); label.className = 'wc__prog-bar-label';
+    if (range === 'week') label.textContent = t(PROG_DOW[b.dow || 0]);
+    else if (range === 'year') label.textContent = t(PROG_MON[b.month || 0]);
+    else if (range === 'month') label.textContent = String(b.dayOfMonth);
+    else label.textContent = '';
+    wrap.appendChild(label);
+    els.progChart.appendChild(wrap);
+  });
+}
+
+async function loadProgress(range) {
+  progRange = range;
+  markProgTab();
+  const r = await sendMessage({ type: 'GET_STATS', range });
+  if (!r.ok) return;
+  const s = r.stats;
+  els.progPrimary.textContent = fmtNumber(s.totalWords);
+  els.progPrimarySub.textContent = t(`dash.primarySub.${range}`);
+  els.progSessions.textContent = fmtNumber(s.sessionCount);
+  if (range === 'today' && isPro() && (settings?.wordGoal || 0) > 0) {
+    const goal = settings.wordGoal;
+    const pct = Math.min(999, Math.round((s.totalWords / goal) * 100));
+    els.progProgress.textContent = `${t('dash.goal')} ${fmtNumber(goal)} · ${pct}%`;
+  } else {
+    els.progProgress.textContent = '';
+  }
+  if (isPro()) renderProgChart(s.buckets, range);
+}
+
+async function openProgress() {
+  const pro = isPro();
+  // Free users: keep it to today's own activity + a tasteful upgrade nudge.
+  els.progTabs.hidden = !pro;
+  els.progChartCard.hidden = !pro;
+  els.progPaywall.hidden = pro;
+  streakValue = streakValue; // keep
+  const sr = await sendMessage({ type: 'GET_STREAK' });
+  const streak = sr.ok ? (sr.streak || 0) : 0;
+  if (streak > 0) {
+    els.progStreak.hidden = false;
+    els.progStreakText.textContent = t(streak === 1 ? 'streak.day' : 'streak.days', { n: fmtNumber(streak) });
+  } else {
+    els.progStreak.hidden = true;
+  }
+  showPanel('progress');
+  await loadProgress('today');
 }
 
 function renderGoal(current, goal) {
@@ -756,6 +847,16 @@ function wire() {
   els.historyFile.addEventListener('change', onImportFile);
   els.historyUpgrade.addEventListener('click', openUpgrade);
 
+  // Progress (in-popup)
+  els.openProgress.addEventListener('click', openProgress);
+  els.dashboardBtn.addEventListener('click', openProgress);
+  els.progressBack.addEventListener('click', () => { showPanel('session'); renderSession(); });
+  els.progUpgrade.addEventListener('click', openUpgrade);
+  els.progHistory.addEventListener('click', openHistory);
+  els.progTabs.querySelectorAll('.wc__range-tab').forEach((b) => {
+    b.addEventListener('click', () => loadProgress(b.dataset.range));
+  });
+
   els.openUpgrade.addEventListener('click', openUpgrade);
   els.upgradeBack.addEventListener('click', () => { showPanel('session'); renderSession(); });
   els.tryPro.addEventListener('click', startProOnboarding);
@@ -809,8 +910,8 @@ function wire() {
     });
   });
 
-  // Dashboard
-  els.dashboardBtn.addEventListener('click', () => sendMessage({ type: 'OPEN_DASHBOARD' }));
+  // Dashboard header icon opens Progress inside the popup (see wire()).
+  // (kept for back-compat; no external tab is opened anymore)
 
   // Prompt "Another"
   els.promptAnother.addEventListener('click', async () => {
