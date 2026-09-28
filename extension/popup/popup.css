@@ -386,3 +386,82 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ================= PHASE 2 ADDITIONS ================= */
+
+/* Daily streak chip */
+.wc__streak {
+  display: inline-flex; align-items: center; gap: 6px;
+  align-self: center;
+  margin: 2px auto 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #F79009 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, #F79009 26%, var(--border));
+  color: #DC6803;
+  font-size: 12px; font-weight: 600; letter-spacing: -0.005em;
+}
+.wc__streak-flame { color: #F79009; flex: 0 0 auto; }
+
+/* Free-user history limit notice */
+.wc__history-limit {
+  margin-top: 14px; padding: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+}
+.wc__history-limit .wc__btn { align-self: stretch; }
+
+.wc__link-btn--danger { color: var(--danger); }
+.wc__link-btn--danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.wc__history-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Feedback */
+.wc__feedback-types { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.wc__chip {
+  appearance: none; cursor: pointer;
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text-muted); font-size: 12.5px; font-weight: 500;
+  font-family: inherit;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+.wc__chip:hover { border-color: var(--primary); }
+.wc__chip[aria-pressed="true"] {
+  border-color: var(--primary); color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.wc__textarea {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  padding: 12px 14px; border-radius: var(--radius);
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text); font-family: inherit; font-size: 13.5px; line-height: 1.5;
+  margin-bottom: 12px;
+}
+.wc__textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+
+/* Dialogs */
+.wc__dialog-backdrop {
+  position: fixed; inset: 0; z-index: 50;
+  background: color-mix(in srgb, #0B0D12 55%, transparent);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(2px);
+}
+.wc__dialog {
+  width: 100%; max-width: 320px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px;
+  box-shadow: 0 12px 40px rgba(11,13,18,0.28);
+  animation: wc-dialog-in 160ms ease;
+}
+@keyframes wc-dialog-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+.wc__dialog-title { margin: 0 0 6px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.wc__dialog-sub { margin: 0 0 14px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.wc__dialog .wc__choices { margin-bottom: 12px; }
+.wc__dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.wc__btn--ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--text-muted); }
+.wc__btn--ghost:hover { background: var(--surface-2); color: var(--text); }
+.wc__btn--danger { background: var(--danger); color: #fff; }
+.wc__btn--danger:hover { background: var(--danger-hover); }
+.wc__pro-badge--sm[hidden] { display: none !important; }

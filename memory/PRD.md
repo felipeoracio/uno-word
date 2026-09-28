@@ -158,3 +158,32 @@ Fixed the tokenizer and the Cut/Undo synchronization bug.
 - Tests: `extension/tests/engine.test.js` extended from 25 → 44 passing.
   Browser-verified via `extension/tests/preview.html` (type→4, cut→3, undo→4;
   punctuation-only→0; paste protection with "+N pasted").
+
+---
+
+## Phase 2 — Streak · Free/Paid history · CSV · Feedback · first-launch language (2026-06)
+
+Extended the shipped extension (no rebuild). All logic client-side; feedback via `mailto:`.
+
+- New engine `extension/shared/history.js` (pure, tested): `sessionWords` (typed
+  only — pasted never counts), `computeStreak` (consecutive days in user tz),
+  `visibleHistory` (Free = last 24h, Pro = all — access rule, no deletion),
+  `toCSV`/`parseCSV`, `mergeHistory` (id/composite dedupe).
+- Daily streak: popup session view + Pro dashboard. Message `GET_STREAK`.
+- History gating: `GET_HISTORY` returns visible set + `hasMore`; Free sees a 24h
+  notice + Upgrade CTA; older records preserved so upgrade restores them instantly.
+- CSV export (`EXPORT_HISTORY`) + import (`IMPORT_HISTORY` merge/replace) with a
+  validation → summary → merge/replace dialog and a destructive-replace confirm.
+  Clear History has its own confirm. Pro-gated; Free gets the Upgrade CTA.
+- Removed the "copied/pasted text" setting entirely (UI + storage purge in
+  `getSettings`); floating counter and popup now show TYPED words only.
+- First-launch language screen (before any UI) via `langChosen`; Settings →
+  Language still changes it; manual choice wins over auto-detect.
+- Send Feedback (Settings → Support) composes `mailto:unowordapp@gmail.com`
+  with type/version/lang/plan/browser — never any writing content.
+- Full EN/ES localization for every new string.
+- Rich-editor coverage: `tests/preview-rich.html` (Notion-style contenteditable)
+  + contenteditable unit tests. Google Docs canvas limitation documented in README.
+- Tests: `engine.test.js` 50 + `history.test.js` 18 = **68 passing**. Browser-
+  verified content script on textarea + contenteditable (cut/undo/paste), popup +
+  settings render checks.

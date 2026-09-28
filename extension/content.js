@@ -324,34 +324,13 @@
     }
 
     function computeDisplay() {
+      // Only typed words are ever counted/shown; pasted text never appears.
       const typed = sessionState.typedWords || 0;
-      const pasted = sessionState.pastedWords || 0;
-      const combined = typed + pasted;
       const goal = sessionState.sessionGoal || 0;
       const isPro = (settings.plan || 'free') === 'pro';
-      const primaryValue = settings.pasteMode === 'as_typed' ? combined : typed;
-      const label = settings.pasteMode === 'as_typed'
-        ? (primaryValue === 1 ? tt('session.word') : tt('session.words'))
-        : (typed === 1 ? tt('session.word') : tt('session.words'));
-
-      // Format primary. Pro users see "127 / 250" style.
-      let text;
-      if (isPro && goal > 0) {
-        text = `${fmt(primaryValue)} / ${fmt(goal)}`;
-      } else {
-        text = fmt(primaryValue);
-      }
-
-      const parts = { text, label };
-      // Secondary line for separate paste mode
-      if (settings.pasteMode === 'separate' && pasted > 0) {
-        parts.secondary = tt('session.pastedSuffix', { n: fmt(pasted) });
-      } else {
-        parts.secondary = '';
-      }
-      // Reached indicator
-      parts.reached = isPro && goal > 0 && primaryValue >= goal;
-      return parts;
+      const label = typed === 1 ? tt('session.word') : tt('session.words');
+      const text = (isPro && goal > 0) ? `${fmt(typed)} / ${fmt(goal)}` : fmt(typed);
+      return { text, label, secondary: '', reached: isPro && goal > 0 && typed >= goal };
     }
 
     function syncFromState() {

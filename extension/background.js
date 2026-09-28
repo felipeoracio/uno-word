@@ -15,6 +15,7 @@
  */
 
 importScripts('shared/wordcount.js');
+importScripts('shared/history.js');
 importScripts('shared/prompts.js');
 
 const STATE_KEY    = 'wc_state';
@@ -39,9 +40,8 @@ const DEFAULT_STATE = {
 
 const DEFAULT_SETTINGS = {
   // First-run
-  onboarded: false,           // paste-mode picked
+  langChosen: false,          // first-launch language screen completed
   proOnboarded: false,        // pro walkthrough completed at least once
-  pasteMode: 'separate',
   // Floating counter
   counterPos: null,
   counterHidden: false,
@@ -72,7 +72,14 @@ const DEFAULT_PROMPT = {
 // ---------- storage helpers ----------
 
 async function getState()   { const { [STATE_KEY]: s }    = await chrome.storage.local.get(STATE_KEY);    return { ...DEFAULT_STATE, ...(s || {}) }; }
-async function getSettings(){ const { [SETTINGS_KEY]: s } = await chrome.storage.local.get(SETTINGS_KEY); return { ...DEFAULT_SETTINGS, ...(s || {}), profile: { ...DEFAULT_SETTINGS.profile, ...((s && s.profile) || {}) } }; }
+async function getSettings(){
+  const { [SETTINGS_KEY]: s } = await chrome.storage.local.get(SETTINGS_KEY);
+  const merged = { ...DEFAULT_SETTINGS, ...(s || {}), profile: { ...DEFAULT_SETTINGS.profile, ...((s && s.profile) || {}) } };
+  // Purge the removed "copied/pasted text" setting so no obsolete value lingers.
+  delete merged.pasteMode;
+  delete merged.onboarded;
+  return merged;
+}
 async function getHistory() { const { [HISTORY_KEY]: h }  = await chrome.storage.local.get(HISTORY_KEY);  return Array.isArray(h) ? h : []; }
 async function getPrompt()  { const { [PROMPT_KEY]: p }   = await chrome.storage.local.get(PROMPT_KEY);   return { ...DEFAULT_PROMPT, ...(p || {}) }; }
 
@@ -134,13 +141,15 @@ async function stopSession() {
   const settings = await getSettings();
   const typedWords  = state.typedWords || 0;
   const pastedWords = state.pastedWords || 0;
+  const goal = state.sessionGoal || 0;
   const lastResult = {
     startedAt: state.startedAt,
     endedAt,
     typedWords,
     pastedWords,
-    sessionGoal: state.sessionGoal || 0,   // historical goal snapshot
-    mode: settings.pasteMode,
+    sessionGoal: goal,                       // historical goal snapshot
+    goalReached: goal > 0 ? typedWords >= goal : false,
+    timezone: settings.profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || null,
   };
   const next = { ...state, active: false, endedAt, lastResult };
   await setState(next);
@@ -244,7 +253,7 @@ async function getStats(range) {
 
   const withWords = history.map((s) => ({
     ...s,
-    _words: (s.typedWords || 0) + (s.pastedWords || 0),
+    _words: self.WCHistory.sessionWords(s),   // typed only; pasted never counts
     _duration: Math.max(0, (s.endedAt || 0) - (s.startedAt || 0)),
     _dayKey: dayKey(s.startedAt, tz),
   }));
@@ -391,8 +400,7 @@ function buildPopupPayload(state, settings) {
     pastedWords,
     totalWords: typedWords + pastedWords,
     sessionGoal: state.sessionGoal || 0,
-    pasteMode: settings.pasteMode,
-    onboarded: settings.onboarded,
+    langChosen: settings.langChosen,
     proOnboarded: settings.proOnboarded,
     plan: settings.plan || 'free',
     language: settings.language,
@@ -463,7 +471,43 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           return;
         }
         case 'GET_HISTORY': {
-          sendResponse({ ok: true, history: await getHistory() });
+          const [full, settings] = await Promise.all([getHistory(), getSettings()]);
+          const plan = settings.plan || 'free';
+          const now = Date.now();
+          const visible = self.WCHistory.visibleHistory(full, plan, now);
+          sendResponse({
+            ok: true,
+            history: visible,
+            plan,
+            totalCount: full.length,
+            hasMore: visible.length < full.length,
+          });
+          return;
+        }
+        case 'GET_STREAK': {
+          const [full, settings] = await Promise.all([getHistory(), getSettings()]);
+          const streak = self.WCHistory.computeStreak(full, settings.profile.timezone, Date.now());
+          sendResponse({ ok: true, streak });
+          return;
+        }
+        case 'EXPORT_HISTORY': {
+          const [full, settings] = await Promise.all([getHistory(), getSettings()]);
+          if ((settings.plan || 'free') !== 'pro') { sendResponse({ ok: false, error: 'pro_only' }); return; }
+          sendResponse({ ok: true, csv: self.WCHistory.toCSV(full), count: full.length });
+          return;
+        }
+        case 'IMPORT_HISTORY': {
+          const settings = await getSettings();
+          if ((settings.plan || 'free') !== 'pro') { sendResponse({ ok: false, error: 'pro_only' }); return; }
+          const records = Array.isArray(msg.records) ? msg.records : [];
+          const mode = msg.mode === 'replace' ? 'replace' : 'merge';
+          const existing = await getHistory();
+          const next = mode === 'replace'
+            ? records.slice().sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0))
+            : self.WCHistory.mergeHistory(existing, records);
+          const capped = next.slice(0, HISTORY_MAX);
+          await chrome.storage.local.set({ [HISTORY_KEY]: capped });
+          sendResponse({ ok: true, history: capped, count: capped.length });
           return;
         }
         case 'CLEAR_HISTORY': {

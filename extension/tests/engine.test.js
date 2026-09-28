@@ -409,6 +409,55 @@ try {
   test('prompts module load', () => { assert.fail('Could not load prompts: ' + err.message); });
 }
 
+// ===== Rich editors (contenteditable: Notion / Google-Docs-like) =====
+// content.js reads el.innerText for contenteditable, so block elements produce
+// newlines and inline formatting (<b>/<i>/<span>) is invisible to the tokenizer.
+// These simulate the innerText the content script observes.
+
+test('rich: inline formatting does not change the word count', () => {
+  assert.equal(countWords('I am bold today'), 4); // bold markup invisible in innerText
+});
+
+test('rich: multi-paragraph contenteditable counts across block newlines', () => {
+  assert.equal(countWords('First paragraph here.\n\nSecond paragraph too.'), 6);
+});
+
+test('rich: typing across formatted spans accrues typed words only', () => {
+  let s = empty();
+  s = edit(s, '', 'I am a', 'insertText');
+  s = edit(s, 'I am a', 'I am a writer', 'insertText');
+  assert.equal(s.typedWords, 4);
+});
+
+test('rich: cut a bold word then undo stays synchronized (contenteditable)', () => {
+  let s = empty();
+  s = edit(s, '', 'I really enjoy writing stories', 'insertText');
+  assert.equal(s.typedWords, 5);
+  s = edit(s, 'I really enjoy writing stories', 'I really enjoy', 'deleteByCut');
+  assert.equal(s.typedWords, 3);
+  s = edit(s, 'I really enjoy', 'I really enjoy writing stories', 'historyUndo');
+  assert.equal(s.typedWords, 5);
+});
+
+test('rich: paste into contenteditable never counts as typed', () => {
+  let s = empty();
+  s = edit(s, '', 'My notes', 'insertText');
+  s = edit(s, 'My notes', 'My notes pasted block of text', 'insertFromPaste');
+  assert.equal(s.typedWords, 2);
+  assert.equal(s.pastedWords, 4);
+});
+
+test('rich: inserting a new paragraph (Enter) is not a word', () => {
+  let s = empty();
+  s = edit(s, '', 'Line one', 'insertText');
+  assert.equal(s.typedWords, 2);
+  s = edit(s, 'Line one', 'Line one\n', 'insertParagraph');
+  assert.equal(s.typedWords, 2);
+  s = edit(s, 'Line one\n', 'Line one\nLine two', 'insertText');
+  assert.equal(s.typedWords, 4);
+});
+
+
 // ---- Runner ----
 (async () => {
   let passed = 0, failed = 0;

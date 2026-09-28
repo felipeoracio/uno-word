@@ -140,6 +140,60 @@
       'settings.save': 'Save',
       'settings.themesSaveMin': 'Choose at least one theme.',
 
+      // streak
+      'streak.day': '{n} day streak',
+      'streak.days': '{n} day streak',
+
+      // first-launch language
+      'first.eyebrow': 'Welcome',
+      'first.title': 'Choose your language',
+      'first.sub': "Select the language you'd like to use in UnoWord.",
+
+      // history (free vs pro) + csv
+      'history.free.title': 'Your recent sessions',
+      'history.free.body': 'Free accounts can view the past 24 hours. Upgrade to keep and view your complete writing history.',
+      'history.export': 'Export CSV',
+      'history.import': 'Import CSV',
+      'import.title': 'Import writing history',
+      'import.summary': '{valid} of {total} records ready to import',
+      'import.invalid': '{n} could not be imported',
+      'import.merge': 'Merge with existing history',
+      'import.replace': 'Replace existing history',
+      'import.errTitle': "We couldn't import this file",
+      'import.errBody': "The CSV format doesn't appear to be a valid UnoWord writing-history file.",
+      'replace.title': 'Replace writing history?',
+      'replace.body': 'Your existing writing history will be permanently deleted and replaced with the records from this CSV file. This action cannot be undone.',
+      'replace.ok': 'Replace History',
+      'clear.title': 'Clear writing history?',
+      'clear.body': 'This will permanently delete your saved session history. This action cannot be undone.',
+      'clear.ok': 'Clear History',
+      'dialog.cancel': 'Cancel',
+      'dialog.continue': 'Continue',
+      'dialog.ok': 'OK',
+
+      // feedback
+      'feedback.title': 'Send feedback',
+      'feedback.sub': "We'd love to hear from you.",
+      'feedback.bug': 'Bug',
+      'feedback.feature': 'Feature Request',
+      'feedback.suggestion': 'Suggestion',
+      'feedback.other': 'Other',
+      'feedback.placeholder': 'Your feedback…',
+      'feedback.send': 'Send Feedback',
+      'feedback.empty': 'Please write a message first.',
+      'feedback.note': 'Opens your email app. Your writing is never included.',
+
+      // settings (new rows)
+      'settings.historyGroup': 'Writing history',
+      'settings.historyRow': 'History',
+      'settings.historyMetaPro': 'Export, import & clear',
+      'settings.historyMetaFree': 'Past 24 hours · Pro for full history',
+      'settings.manage': 'Manage',
+      'settings.support': 'Support',
+      'settings.feedback': 'Send feedback',
+      'settings.feedbackMeta': 'Tell us what to improve',
+      'settings.open': 'Open',
+
       // dashboard link
       'dash.viewFull': 'View full stats',
       'dash.title': 'Your writing',
@@ -323,6 +377,60 @@
       'settings.edit': 'Editar',
       'settings.save': 'Guardar',
       'settings.themesSaveMin': 'Elige al menos un tema.',
+
+      // streak
+      'streak.day': '{n} día de racha',
+      'streak.days': '{n} días de racha',
+
+      // first-launch language
+      'first.eyebrow': 'Bienvenido',
+      'first.title': 'Elige tu idioma',
+      'first.sub': 'Selecciona el idioma que quieres usar en UnoWord.',
+
+      // history (free vs pro) + csv
+      'history.free.title': 'Tus sesiones recientes',
+      'history.free.body': 'Las cuentas gratuitas pueden ver las últimas 24 horas. Mejora a Pro para conservar y ver todo tu historial de escritura.',
+      'history.export': 'Exportar CSV',
+      'history.import': 'Importar CSV',
+      'import.title': 'Importar historial de escritura',
+      'import.summary': '{valid} de {total} registros listos para importar',
+      'import.invalid': 'No se pudieron importar {n}',
+      'import.merge': 'Combinar con el historial existente',
+      'import.replace': 'Reemplazar el historial existente',
+      'import.errTitle': 'No pudimos importar este archivo',
+      'import.errBody': 'El formato del CSV no parece ser un archivo de historial de UnoWord válido.',
+      'replace.title': '¿Reemplazar el historial?',
+      'replace.body': 'Tu historial actual se eliminará de forma permanente y se reemplazará con los registros de este archivo CSV. Esta acción no se puede deshacer.',
+      'replace.ok': 'Reemplazar historial',
+      'clear.title': '¿Borrar el historial?',
+      'clear.body': 'Esto eliminará de forma permanente tu historial de sesiones guardado. Esta acción no se puede deshacer.',
+      'clear.ok': 'Borrar historial',
+      'dialog.cancel': 'Cancelar',
+      'dialog.continue': 'Continuar',
+      'dialog.ok': 'OK',
+
+      // feedback
+      'feedback.title': 'Enviar comentarios',
+      'feedback.sub': 'Nos encantaría saber de ti.',
+      'feedback.bug': 'Error',
+      'feedback.feature': 'Sugerencia de función',
+      'feedback.suggestion': 'Sugerencia',
+      'feedback.other': 'Otro',
+      'feedback.placeholder': 'Tus comentarios…',
+      'feedback.send': 'Enviar comentarios',
+      'feedback.empty': 'Escribe un mensaje primero.',
+      'feedback.note': 'Abre tu app de correo. Tu escritura nunca se incluye.',
+
+      // settings (new rows)
+      'settings.historyGroup': 'Historial de escritura',
+      'settings.historyRow': 'Historial',
+      'settings.historyMetaPro': 'Exportar, importar y borrar',
+      'settings.historyMetaFree': 'Últimas 24 horas · Pro para el historial completo',
+      'settings.manage': 'Gestionar',
+      'settings.support': 'Soporte',
+      'settings.feedback': 'Enviar comentarios',
+      'settings.feedbackMeta': 'Dinos qué mejorar',
+      'settings.open': 'Abrir',
 
       'dash.viewFull': 'Ver estadísticas',
       'dash.title': 'Tu escritura',

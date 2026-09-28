@@ -19,7 +19,7 @@ const els = {
   settingsBtn: $('settings-btn'),
 
   // panels
-  onboarding:    $('onboarding-panel'),
+  firstlaunch:   $('firstlaunch-panel'),
   promptPanel:   $('prompt-panel'),
   session:       $('session-panel'),
   upgradeCta:    $('upgrade-cta'),
@@ -27,6 +27,7 @@ const els = {
   proOnboard:    $('pro-onboarding'),
   history:       $('history-panel'),
   settings:      $('settings-panel'),
+  feedback:      $('feedback-panel'),
 
   // session
   statusIdle:   $('status-idle'),
@@ -40,6 +41,8 @@ const els = {
   durationValue:$('duration-value'),
   primaryBtn:   $('primary-btn'),
   helperText:   $('helper-text'),
+  streakChip:   $('streak-chip'),
+  streakText:   $('streak-text'),
 
   // prompt
   promptText:   $('prompt-text'),
@@ -69,9 +72,34 @@ const els = {
   historyList:   $('history-list'),
   historyEmpty:  $('history-empty'),
   historyActions:$('history-actions'),
+  historyLimit:  $('history-limit'),
+  historyUpgrade:$('history-upgrade'),
+  historyExport: $('history-export'),
+  historyImport: $('history-import'),
+  historyFile:   $('history-file'),
   historySummary:$('history-summary'),
   historyBack:   $('history-back'),
   historyClear:  $('history-clear'),
+
+  // feedback
+  feedbackBack:  $('feedback-back'),
+  feedbackTypes: $('feedback-types'),
+  feedbackMessage:$('feedback-message'),
+  feedbackError: $('feedback-error'),
+  feedbackSend:  $('feedback-send'),
+
+  // dialogs
+  dialogBackdrop:$('dialog-backdrop'),
+  dialogImport:  $('dialog-import'),
+  importSummary: $('import-summary'),
+  importError:   $('import-error'),
+  importCancel:  $('import-cancel'),
+  importContinue:$('import-continue'),
+  dialogConfirm: $('dialog-confirm'),
+  confirmTitle:  $('confirm-title'),
+  confirmBody:   $('confirm-body'),
+  confirmCancel: $('confirm-cancel'),
+  confirmOk:     $('confirm-ok'),
 
   // settings
   settingsBack:  $('settings-back'),
@@ -87,9 +115,10 @@ const els = {
   settingsThemes:$('settings-themes'),
   themesError:   $('themes-error'),
   saveThemes:    $('save-themes'),
-  pasteMeta:     $('paste-meta'),
-  togglePaste:   $('toggle-paste'),
-  pasteEditor:   $('paste-editor'),
+  historyMeta:   $('history-meta'),
+  historyProBadge:$('history-pro-badge'),
+  settingsOpenHistory: $('settings-open-history'),
+  openFeedback:  $('open-feedback'),
   languageMeta:  $('language-meta'),
   editLanguage:  $('edit-language'),
   languageEditor:$('language-editor'),
@@ -127,7 +156,7 @@ function fmtDuration(ms) {
 // ---------- panels ----------
 
 function showPanel(name) {
-  els.onboarding.hidden = name !== 'onboarding';
+  els.firstlaunch.hidden = name !== 'firstlaunch';
   els.promptPanel.hidden = !(name === 'session' && isPro() && !state?.active);
   els.session.hidden    = name !== 'session';
   els.upgradeCta.hidden = !(name === 'session' && !isPro());
@@ -135,6 +164,7 @@ function showPanel(name) {
   els.proOnboard.hidden = name !== 'proOnboard';
   els.history.hidden    = name !== 'history';
   els.settings.hidden   = name !== 'settings';
+  els.feedback.hidden   = name !== 'feedback';
 }
 
 function isPro() { return (settings?.plan || 'free') === 'pro'; }
@@ -152,13 +182,14 @@ function renderSession() {
 
   els.proBadge.hidden = !isPro();
   els.dashboardBtn.hidden = !isPro();
+  renderStreak();
 
-  const { active, startedAt, typedWords, pastedWords, totalWords, pasteMode, sessionGoal, lastResult } = state;
+  const { active, startedAt, typedWords, sessionGoal, lastResult } = state;
 
   if (active) {
     setStatus('active');
-    renderCount(pasteMode, typedWords, pastedWords, totalWords);
-    renderGoal(pasteMode === 'as_typed' ? totalWords : typedWords, sessionGoal);
+    renderCount(typedWords);
+    renderGoal(typedWords, sessionGoal);
     els.durationRow.hidden = false;
     els.durationValue.textContent = fmtDuration(Date.now() - (startedAt || Date.now()));
     els.primaryBtn.textContent = t('session.stop');
@@ -167,11 +198,8 @@ function renderSession() {
     startDurationTicker();
   } else if (lastResult) {
     setStatus('done');
-    renderCount(lastResult.mode, lastResult.typedWords, lastResult.pastedWords, lastResult.typedWords + lastResult.pastedWords);
-    renderGoal(
-      lastResult.mode === 'as_typed' ? lastResult.typedWords + lastResult.pastedWords : lastResult.typedWords,
-      lastResult.sessionGoal || 0
-    );
+    renderCount(lastResult.typedWords);
+    renderGoal(lastResult.typedWords, lastResult.sessionGoal || 0);
     els.durationRow.hidden = false;
     els.durationValue.textContent = fmtDuration(Math.max(0, (lastResult.endedAt || 0) - (lastResult.startedAt || 0)));
     els.primaryBtn.textContent = t('session.new');
@@ -180,7 +208,7 @@ function renderSession() {
     stopDurationTicker();
   } else {
     setStatus('idle');
-    renderCount(pasteMode, 0, 0, 0);
+    renderCount(0);
     renderGoal(0, isPro() ? (settings?.wordGoal || 0) : 0);
     els.durationRow.hidden = true;
     els.primaryBtn.textContent = t('session.start');
@@ -190,21 +218,27 @@ function renderSession() {
   }
 }
 
-function renderCount(mode, typed, pasted, total) {
-  if (mode === 'as_typed') {
-    els.countNumber.textContent = fmtNumber(total);
-    els.countLabel.textContent = total === 1 ? t('session.word') : t('session.words');
-    els.countSub.hidden = true;
+// Only typed words are ever shown; pasted text never counts.
+function renderCount(typed) {
+  els.countNumber.textContent = fmtNumber(typed);
+  els.countLabel.textContent = typed === 1 ? t('session.wordTyped') : t('session.wordsTyped');
+  els.countSub.hidden = true;
+}
+
+let streakValue = 0;
+function renderStreak() {
+  if (!els.streakChip) return;
+  if (streakValue > 0) {
+    els.streakChip.hidden = false;
+    els.streakText.textContent = t(streakValue === 1 ? 'streak.day' : 'streak.days', { n: fmtNumber(streakValue) });
   } else {
-    els.countNumber.textContent = fmtNumber(typed);
-    els.countLabel.textContent = typed === 1 ? t('session.wordTyped') : t('session.wordsTyped');
-    if (pasted > 0) {
-      els.countSub.hidden = false;
-      els.countSub.textContent = t('session.pastedSuffix', { n: fmtNumber(pasted) });
-    } else {
-      els.countSub.hidden = true;
-    }
+    els.streakChip.hidden = true;
   }
+}
+async function refreshStreak() {
+  const r = await sendMessage({ type: 'GET_STREAK' });
+  streakValue = r.ok ? (r.streak || 0) : 0;
+  renderStreak();
 }
 
 function renderGoal(current, goal) {
@@ -252,7 +286,7 @@ async function primaryClick() {
   const r = state.active
     ? await sendMessage({ type: 'STOP_SESSION' })
     : await sendMessage({ type: 'START_SESSION' });
-  if (r.ok) { state = r.payload; renderSession(); }
+  if (r.ok) { state = r.payload; renderSession(); refreshStreak(); }
 }
 
 // ---------- upgrade / pro onboarding ----------
@@ -413,13 +447,18 @@ function dayHeading(ts) {
   const lang = getLang() === 'es' ? 'es-ES' : 'en-US';
   return new Date(ts).toLocaleDateString(lang, { weekday: 'short', month: 'short', day: 'numeric' });
 }
-function totalWords(s) { return (s.typedWords || 0) + (s.pastedWords || 0); }
+function totalWords(s) { return window.WCHistory.sessionWords(s); }
+
+let historyPlan = 'free';
+let historyHasMore = false;
 
 function renderHistory(history) {
   els.historyList.innerHTML = '';
   const hasAny = Array.isArray(history) && history.length > 0;
   els.historyEmpty.hidden = hasAny;
-  els.historyActions.hidden = !hasAny;
+  els.historyActions.hidden = !(hasAny && historyPlan === 'pro');
+  // Free users who have older (hidden) sessions see the 24h notice + upgrade.
+  els.historyLimit.hidden = !(historyPlan !== 'pro' && historyHasMore);
 
   if (!hasAny) { els.historySummary.textContent = t('history.summary.none'); return; }
   const todayK = dayKey(Date.now());
@@ -445,8 +484,10 @@ function renderHistory(history) {
     const meta = document.createElement('div'); meta.className = 'wc__history-meta';
     const dur = Math.max(0, (s.endedAt || 0) - (s.startedAt || 0));
     const bits = [formatDurationShort(dur)];
-    if (s.mode === 'separate' && (s.pastedWords || 0) > 0) bits.push(`${fmtNumber(s.typedWords)} typed · ${fmtNumber(s.pastedWords)} pasted`);
-    if (s.sessionGoal) bits.push(`${t('dash.goal')} ${fmtNumber(s.sessionGoal)}`);
+    if (s.sessionGoal) {
+      const reached = totalWords(s) >= s.sessionGoal;
+      bits.push(`${t('dash.goal')} ${fmtNumber(s.sessionGoal)}${reached ? ' ✓' : ''}`);
+    }
     meta.textContent = bits.join(' · ');
     const count = document.createElement('div'); count.className = 'wc__history-count';
     const w = totalWords(s);
@@ -456,8 +497,129 @@ function renderHistory(history) {
   });
 }
 
-async function openHistory() { const r = await sendMessage({ type: 'GET_HISTORY' }); renderHistory(r.ok ? r.history : []); showPanel('history'); }
-async function clearHistoryAction() { const r = await sendMessage({ type: 'CLEAR_HISTORY' }); if (r.ok) renderHistory(r.history || []); }
+async function openHistory() {
+  const r = await sendMessage({ type: 'GET_HISTORY' });
+  if (r.ok) { historyPlan = r.plan || 'free'; historyHasMore = !!r.hasMore; }
+  renderHistory(r.ok ? r.history : []);
+  showPanel('history');
+}
+
+// ---- dialogs ----
+function openBackdrop(which) {
+  els.dialogBackdrop.hidden = false;
+  els.dialogImport.hidden = which !== 'import';
+  els.dialogConfirm.hidden = which !== 'confirm';
+}
+function closeDialogs() {
+  els.dialogBackdrop.hidden = true;
+  els.dialogImport.hidden = true;
+  els.dialogConfirm.hidden = true;
+}
+let confirmHandler = null;
+function showConfirm(title, body, okLabel, onOk) {
+  els.confirmTitle.textContent = title;
+  els.confirmBody.textContent = body;
+  els.confirmOk.textContent = okLabel;
+  confirmHandler = onOk;
+  openBackdrop('confirm');
+}
+
+function clearHistoryAction() {
+  showConfirm(t('clear.title'), t('clear.body'), t('clear.ok'), async () => {
+    const r = await sendMessage({ type: 'CLEAR_HISTORY' });
+    closeDialogs();
+    if (r.ok) { historyHasMore = false; renderHistory(r.history || []); refreshStreak(); }
+  });
+}
+
+// ---- CSV export ----
+async function exportHistory() {
+  const r = await sendMessage({ type: 'EXPORT_HISTORY' });
+  if (!r.ok) return;
+  const blob = new Blob([r.csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const day = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `unoword-writing-history-${day}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---- CSV import (merge / replace) ----
+let importParsed = null;
+let importMode = 'merge';
+
+function triggerImport() { els.historyFile.value = ''; els.historyFile.click(); }
+
+async function onImportFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const parsed = window.WCHistory.parseCSV(text);
+  if (!parsed.ok && parsed.validCount === 0) {
+    showConfirm(t('import.errTitle'), t('import.errBody'), t('dialog.ok'), () => closeDialogs());
+    els.confirmCancel.style.display = 'none';
+    return;
+  }
+  els.confirmCancel.style.display = '';
+  importParsed = parsed;
+  importMode = 'merge';
+  els.importSummary.textContent = t('import.summary', {
+    valid: fmtNumber(parsed.validCount),
+    total: fmtNumber(parsed.total),
+  }) + (parsed.invalidCount > 0 ? ' · ' + t('import.invalid', { n: fmtNumber(parsed.invalidCount) }) : '');
+  els.importError.hidden = true;
+  els.dialogImport.querySelectorAll('.wc__choice').forEach((b) => {
+    b.setAttribute('aria-checked', b.dataset.mode === 'merge' ? 'true' : 'false');
+  });
+  openBackdrop('import');
+}
+
+async function doImport() {
+  if (!importParsed) return;
+  const records = importParsed.records;
+  const finish = async (mode) => {
+    const r = await sendMessage({ type: 'IMPORT_HISTORY', mode, records });
+    closeDialogs();
+    if (r.ok) { historyPlan = 'pro'; historyHasMore = false; renderHistory(r.history || []); refreshStreak(); }
+  };
+  if (importMode === 'replace') {
+    showConfirm(t('replace.title'), t('replace.body'), t('replace.ok'), () => finish('replace'));
+  } else {
+    await finish('merge');
+  }
+}
+
+// ---- feedback (mailto) ----
+let feedbackType = '';
+function openFeedback() {
+  feedbackType = '';
+  els.feedbackMessage.value = '';
+  els.feedbackError.hidden = true;
+  els.feedbackTypes.querySelectorAll('.wc__chip').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+  showPanel('feedback');
+}
+function sendFeedback() {
+  const msg = (els.feedbackMessage.value || '').trim();
+  if (!msg) { els.feedbackError.hidden = false; els.feedbackError.textContent = t('feedback.empty'); return; }
+  const typeLabel = feedbackType ? t(`feedback.${feedbackType}`) : t('feedback.other');
+  const subject = `UnoWord Feedback — ${typeLabel}`;
+  let version = '';
+  try { version = chrome.runtime.getManifest().version; } catch (_e) { /* preview */ }
+  const bodyLines = [
+    msg, '', '---',
+    `Type: ${typeLabel}`,
+    `Version: ${version}`,
+    `Language: ${getLang()}`,
+    `Plan: ${isPro() ? 'Pro' : 'Free'}`,
+    `Browser: ${navigator.userAgent}`,
+  ];
+  const url = `mailto:unowordapp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join('\n'))}`;
+  try { chrome.tabs.create({ url }); } catch (_e) { window.open(url, '_blank'); }
+}
 
 // ---------- settings ----------
 
@@ -468,17 +630,19 @@ function renderSettings() {
   els.themesMeta.textContent = (settings.themes && settings.themes.length)
     ? settings.themes.map((s) => t(`theme.${s}`)).join(' · ')
     : t('settings.themesMetaEmpty');
-  els.pasteMeta.textContent = settings.pasteMode === 'as_typed'
-    ? t('settings.pasteAsTyped') : t('settings.pasteSeparate');
+  els.historyMeta.textContent = isPro() ? t('settings.historyMetaPro') : t('settings.historyMetaFree');
+  els.settingsOpenHistory.textContent = isPro() ? t('settings.manage') : t('upgrade.cta.btn');
   els.languageMeta.textContent = (settings.language || getLang()) === 'es' ? 'Español' : 'English';
   els.planMeta.textContent = isPro() ? t('settings.planPro') : t('settings.planFree');
   els.planAction.textContent = isPro() ? t('settings.cancelPro') : t('settings.upgradeRow');
   els.planAction.dataset.action = isPro() ? 'cancel' : 'upgrade';
 
+  // Pro badges visibility
+  [els.historyProBadge, $('goal-pro-badge'), $('themes-pro-badge')].forEach((b) => { if (b) b.hidden = isPro(); });
+
   // Reset editors closed
   els.goalEditor.hidden = true;
   els.themesEditor.hidden = true;
-  els.pasteEditor.hidden = true;
   els.languageEditor.hidden = true;
 }
 
@@ -530,19 +694,6 @@ function toggleThemesEditor() {
   };
 }
 
-function togglePasteEditor() {
-  els.pasteEditor.hidden = !els.pasteEditor.hidden;
-  if (!els.pasteEditor.hidden) {
-    els.pasteEditor.querySelectorAll('.wc__choice').forEach((btn) => {
-      btn.setAttribute('aria-checked', btn.dataset.value === settings.pasteMode ? 'true' : 'false');
-      btn.onclick = async () => {
-        const r = await sendMessage({ type: 'SET_SETTINGS', settings: { pasteMode: btn.dataset.value } });
-        if (r.ok) { settings = r.settings; renderSettings(); renderSession(); }
-      };
-    });
-  }
-}
-
 function toggleLanguageEditor() {
   els.languageEditor.hidden = !els.languageEditor.hidden;
   if (!els.languageEditor.hidden) {
@@ -573,14 +724,21 @@ async function planAction() {
 
 async function proBadgeUpdate() { els.proBadge.hidden = !isPro(); els.dashboardBtn.hidden = !isPro(); }
 
-// ---------- paste onboarding ----------
+// ---------- first-launch language ----------
 
-async function onPasteChoice(value) {
-  const r = await sendMessage({ type: 'SET_SETTINGS', settings: { onboarded: true, pasteMode: value } });
+async function onFirstLangChoice(lang) {
+  const r = await sendMessage({ type: 'SET_SETTINGS', settings: { langChosen: true, language: lang } });
   if (r.ok) {
     settings = r.settings;
+    setLang(lang);
+    applyI18n(document);
     const s = await sendMessage({ type: 'GET_STATE' });
-    if (s.ok) { state = s.payload; showPanel('session'); renderSession(); }
+    if (s.ok) state = s.payload;
+    await proBadgeUpdate();
+    await renderPrompt();
+    await refreshStreak();
+    showPanel('session');
+    renderSession();
   }
 }
 
@@ -593,14 +751,19 @@ function wire() {
   els.historyBtn.addEventListener('click', openHistory);
   els.historyBack.addEventListener('click', () => { showPanel('session'); renderSession(); });
   els.historyClear.addEventListener('click', clearHistoryAction);
+  els.historyExport.addEventListener('click', exportHistory);
+  els.historyImport.addEventListener('click', triggerImport);
+  els.historyFile.addEventListener('change', onImportFile);
+  els.historyUpgrade.addEventListener('click', openUpgrade);
 
   els.openUpgrade.addEventListener('click', openUpgrade);
   els.upgradeBack.addEventListener('click', () => { showPanel('session'); renderSession(); });
   els.tryPro.addEventListener('click', startProOnboarding);
   els.proOnboardNext.addEventListener('click', proOnboardNext);
 
-  document.querySelectorAll('#onboarding-panel .wc__choice').forEach((btn) => {
-    btn.addEventListener('click', () => onPasteChoice(btn.dataset.value));
+  // First-launch language selection
+  document.querySelectorAll('#first-lang-choices .wc__choice').forEach((btn) => {
+    btn.addEventListener('click', () => onFirstLangChoice(btn.dataset.lang));
   });
   document.querySelectorAll('#lang-choices .wc__choice').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -618,10 +781,33 @@ function wire() {
   els.saveGoal.addEventListener('click', saveGoal);
   els.goalInput.addEventListener('input', () => { els.goalError.hidden = true; });
   els.editThemes.addEventListener('click', toggleThemesEditor);
-  els.togglePaste.addEventListener('click', togglePasteEditor);
   els.editLanguage.addEventListener('click', toggleLanguageEditor);
   els.planAction.addEventListener('click', planAction);
   els.promptEditThemes.addEventListener('click', () => { openSettings(); toggleThemesEditor(); });
+  els.settingsOpenHistory.addEventListener('click', () => { if (isPro()) openHistory(); else openUpgrade(); });
+  els.openFeedback.addEventListener('click', openFeedback);
+
+  // Feedback
+  els.feedbackBack.addEventListener('click', () => { openSettings(); });
+  els.feedbackSend.addEventListener('click', sendFeedback);
+  els.feedbackTypes.querySelectorAll('.wc__chip').forEach((b) => {
+    b.addEventListener('click', () => {
+      feedbackType = b.dataset.type;
+      els.feedbackTypes.querySelectorAll('.wc__chip').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    });
+  });
+
+  // Dialogs
+  els.importCancel.addEventListener('click', closeDialogs);
+  els.confirmCancel.addEventListener('click', closeDialogs);
+  els.importContinue.addEventListener('click', doImport);
+  els.confirmOk.addEventListener('click', () => { if (confirmHandler) confirmHandler(); });
+  els.dialogImport.querySelectorAll('.wc__choice').forEach((b) => {
+    b.addEventListener('click', () => {
+      importMode = b.dataset.mode;
+      els.dialogImport.querySelectorAll('.wc__choice').forEach((x) => x.setAttribute('aria-checked', x === b ? 'true' : 'false'));
+    });
+  });
 
   // Dashboard
   els.dashboardBtn.addEventListener('click', () => sendMessage({ type: 'OPEN_DASHBOARD' }));
@@ -653,20 +839,21 @@ async function boot() {
     settings = r.settings;
   } else {
     // Preview fallback
-    state = { active: false, typedWords: 0, pastedWords: 0, totalWords: 0, sessionGoal: 0, pasteMode: 'separate', onboarded: true, plan: 'free', language: null, lastResult: null };
-    settings = { onboarded: true, plan: 'free', pasteMode: 'separate', wordGoal: 250, themes: [], language: null, profile: {} };
+    state = { active: false, typedWords: 0, pastedWords: 0, totalWords: 0, sessionGoal: 0, langChosen: true, plan: 'free', language: null, lastResult: null };
+    settings = { langChosen: true, plan: 'free', wordGoal: 250, themes: [], language: null, profile: {} };
   }
 
-  // Language: profile override → auto-detect
+  // Language: chosen/profile override → auto-detect
   const activeLang = settings.language || detectDefault();
   setLang(activeLang);
   applyI18n(document);
 
-  // First-run: paste-mode onboarding
-  if (!settings.onboarded) { showPanel('onboarding'); return; }
+  // First-run: language selection screen (before anything else)
+  if (!settings.langChosen) { showPanel('firstlaunch'); return; }
 
   await proBadgeUpdate();
   await renderPrompt();
+  await refreshStreak();
   showPanel('session');
   renderSession();
 }

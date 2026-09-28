@@ -19,6 +19,7 @@ const els = {
   heroSub:      document.getElementById('hero-sub'),
   heroSessions: document.getElementById('hero-sessions'),
   heroProgress: document.getElementById('hero-progress'),
+  heroStreak:   document.getElementById('hero-streak'),
   chart:        document.getElementById('chart'),
   chartEmpty:   document.getElementById('chart-empty'),
   statAvg:      document.getElementById('stat-avg'),
@@ -107,7 +108,7 @@ function renderRecent(sessions) {
                    durS < 3600 ? `${Math.floor(durS/60)}m ${pad2(durS%60)}s` :
                    `${Math.floor(durS/3600)}h ${pad2(Math.floor((durS%3600)/60))}m`;
 
-    const words = (s.typedWords || 0) + (s.pastedWords || 0);
+    const words = window.WCHistory.sessionWords(s);
 
     const time = document.createElement('div'); time.className = 'wd-recent-time';
     time.textContent = `${d.toLocaleDateString(getLang() === 'es' ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' })} · ${hh}:${mm} ${ampm}`;
@@ -173,6 +174,18 @@ async function boot() {
   els.planBadge.textContent = isPro ? 'PRO' : (getLang() === 'es' ? 'GRATIS' : 'FREE');
   els.planBadge.setAttribute('data-plan', isPro ? 'pro' : 'free');
   els.paywall.hidden = isPro;
+
+  // Daily streak (Pro dashboard)
+  if (isPro) {
+    const sr = await sendMessage({ type: 'GET_STREAK' });
+    const streak = sr.ok ? (sr.streak || 0) : 0;
+    els.heroStreak.textContent = streak > 0
+      ? `🔥 ${t(streak === 1 ? 'streak.day' : 'streak.days', { n: fmt(streak) })}`
+      : '';
+  } else {
+    els.heroStreak.textContent = '';
+  }
+
   els.paywallCta.addEventListener('click', () => {
     // Send user to the popup route; open the extension popup by focusing action.
     // We simply close and rely on user opening the popup for demo.

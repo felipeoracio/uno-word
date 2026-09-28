@@ -1,5 +1,17 @@
 # Word Count — Chrome Extension (Phase 2)
 
+> **Editor support & limitations (word counting).** Counting is driven by
+> `input` events + `inputType`, reconciled against the editor's actual text
+> (see `shared/wordcount.js`). This works in `<textarea>`, text `<input>`, and
+> **contenteditable rich editors like Notion** (bold/italic/blocks are invisible
+> to the whitespace tokenizer, so formatting never changes the count). Cut
+> (`deleteByCut`), Undo (`historyUndo`) and Redo (`historyRedo`) all resync.
+> **Google Docs is not supported for word counting**: it renders text on a
+> `<canvas>` with a hidden off-DOM input, so its editable content is not exposed
+> to content scripts and cannot be read reliably. Manual/automated coverage:
+> `tests/engine.test.js` (unit), `tests/preview.html` (textarea) and
+> `tests/preview-rich.html` (contenteditable / Notion-style).
+
 A minimal, private Chrome extension that tracks your writing sessions.
 Free users get a live word counter, on-screen floating pill, and local
 session history. Pro users add a **daily writing prompt**, a
