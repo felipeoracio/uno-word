@@ -531,12 +531,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           return;
         }
         case 'OPEN_DASHBOARD': {
-          try {
-            await chrome.tabs.create({ url: chrome.runtime.getURL('dashboard/dashboard.html') });
-            sendResponse({ ok: true });
-          } catch (e) {
-            sendResponse({ ok: false, error: String(e) });
-          }
+          // Deprecated: Progress now renders inside the popup. Never open a tab.
+          sendResponse({ ok: false, error: 'deprecated_in_popup' });
           return;
         }
         default:
